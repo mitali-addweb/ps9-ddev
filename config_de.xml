@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<module>
+	<name>tshirtecommerce</name>
+	<displayName><![CDATA[Prestashop Custom Product Designer]]></displayName>
+	<version><![CDATA[2.1.4]]></version>
+	<description><![CDATA[Prestashop Custom Product Designer is a system help you create website powerful with custom product online and ecommerce. Website allow your client design before order. A comprehensive solution for printing company with sale T-shirt/apparel designer, Sign board designer, Stamp designer, Smartphone/Tablet/Laptop skin, bottle label designer, Bags, Stickers/Label Designer &hellip;]]></description>
+	<author><![CDATA[Tshirtecommerce Team]]></author>
+	<tab><![CDATA[front_office_features]]></tab>
+	<is_configurable>1</is_configurable>
+	<need_instance>0</need_instance>
+	<limited_countries></limited_countries>
+</module>

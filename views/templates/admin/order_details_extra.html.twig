@@ -1,0 +1,59 @@
+{% extends '@PrestaShop/Admin/layout.html.twig' %}
+
+{% block content %}
+    {% if orderDesigns is not empty %}
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-header-title">
+                    {{ 'T-Shirt Designs'|trans({}, 'Modules.Tshirtecommerce.Admin') }}
+                </h3>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>{{ 'Product'|trans({}, 'Modules.Tshirtecommerce.Admin') }}</th>
+                                <th>{{ 'Design ID'|trans({}, 'Modules.Tshirtecommerce.Admin') }}</th>
+                                <th>{{ 'Preview'|trans({}, 'Modules.Tshirtecommerce.Admin') }}</th>
+                                <th>{{ 'Actions'|trans({}, 'Modules.Tshirtecommerce.Admin') }}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for design in orderDesigns %}
+                                <tr>
+                                    <td>{{ design.product_name }}</td>
+                                    <td>{{ design.design_id }}</td>
+                                    <td>
+                                        {% if design.preview_url %}
+                                            <img src="{{ design.preview_url }}" alt="Design Preview" class="img-thumbnail" style="max-width: 100px;">
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group">
+                                            <a href="{{ design.edit_url }}" class="btn btn-primary btn-sm" target="_blank">
+                                                {{ 'Edit Design'|trans({}, 'Modules.Tshirtecommerce.Admin') }}
+                                            </a>
+                                            <a href="{{ design.download_url }}" class="btn btn-secondary btn-sm">
+                                                {{ 'Download'|trans({}, 'Modules.Tshirtecommerce.Admin') }}
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script type="text/javascript">
+        $(document).ready(function() {
+            // Any additional JavaScript initialization
+        });
+    </script>
+{% endblock %}

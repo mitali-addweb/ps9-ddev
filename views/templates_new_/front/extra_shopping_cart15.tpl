@@ -1,0 +1,56 @@
+{*
+* @module Prestashop Custom Product Designer
+*
+* @author 		tshirtecommerce - https://tshirtecommerce.com/
+* @date 		January 11, 2017
+* 
+* API 			1.0.1
+* 
+* @copyright  	Copyright (C) 2016 tshirtecommerce.com. All rights reserved.
+* @license    	GNU General Public License version 2 or later; see LICENSE
+*
+* @since 		1.5
+*
+*}
+
+<!-- Tshirteocmmerce -->
+{strip}
+{addJsDef tseTrArr=$tse_tr_array}
+{addJsDef tse_path_img=$tse_path_img}
+{/strip}
+<script type="text/javascript">
+	// Append
+	jQuery(document).ready( function() {
+		// Append image design to shopping cart
+		jQuery('#cart_summary tr').each( function() {
+			jQuery(".zoom-gallery").remove();
+			jQuery(".link-edit-design").remove();
+			for(var key in tseTrArr) {
+				if(jQuery(this).attr('id') == key) {
+					var tse_design_img = '<div class="zoom-gallery">';
+					for (var k in tseTrArr[key]['design']) {
+						var title = '';
+						if (k == 'front') {
+							title = "{l s='Front' mod='tshirtecommerce'}";
+						} else if (k == 'back') {
+							title = "{l s='Back' mod='tshirtecommerce'}";
+						} else if (k == 'left') {
+							title = "{l s='Left' mod='tshirtecommerce'}";
+						} else {
+							title = "{l s='Right' mod='tshirtecommerce'}";
+						}
+						tse_design_img += "<a href='" + tse_path_img + tseTrArr[key]['design'][k] + "' data-source='" + tse_path_img + tseTrArr[key]['design'][k] + "' title='" + title + "' product-name='" + jQuery(this).find('.product-name a').text() + "'>";
+						tse_design_img += "<img alt='" + title + "' src='" + tse_path_img+tseTrArr[key]['design'][k] + "' title='" + title + "' class='tshirtecommerce-img-thumb' width='98' height='98' />";
+						tse_design_img += "</a>";
+					}
+					tse_design_img += '</div>';
+					tse_design_img += '<a class="link-edit-design" href="'+tseTrArr[key]['link']+'" title="{l s='Edit Design' mod='tshirtecommerce'}">{l s='Edit Design' mod='tshirtecommerce'}</a>'
+					jQuery(this).find('.cart_description').append(tse_design_img);
+				}
+			}
+			
+		});
+	});
+
+</script>
+<!-- /Tshirtecommerce -->

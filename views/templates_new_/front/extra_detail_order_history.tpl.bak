@@ -1,0 +1,127 @@
+{*
+* @module Prestashop Custom Product Designer
+*
+* @author 		tshirtecommerce - https://tshirtecommerce.com/
+* @date 		January 11, 2017
+* 
+* API 			1.0.1
+* 
+* @copyright  	Copyright (C) 2016 tshirtecommerce.com. All rights reserved.
+* @license    	GNU General Public License version 2 or later; see LICENSE
+*
+* @since 		1.5
+*
+*}
+
+<div class="tshirtecommerce-order-history" class="table_block table-responsive">
+	<table class="table table-bordered">
+		<thead>
+			<th class="first-item">{l s='Reference' mod='tshirtecommerce'}</th>
+			<th class="item">{l s='Product' mod='tshirtecommerce'}</th>
+			<th class="item">{l s='Quantity' mod='tshirtecommerce'}</th>
+			<th class="item">{l s='Unit price' mod='tshirtecommerce'}</th>
+			<th class="item">{l s='Total price' mod='tshirtecommerce'}</th>
+		</thead>
+		<tbody>
+			{foreach from=$products item=product name=products}
+			{if !isset($product.deleted)}
+				{assign var='productId' value=$product.product_id}
+				{assign var='productAttributeId' value=$product.product_attribute_id}
+				{if isset($product.customizedDatas)}
+					{assign var='productQuantity' value=$product.product_quantity-$product.customizationQuantityTotal}
+				{else}
+					{assign var='productQuantity' value=$product.product_quantity}
+				{/if}
+				{assign var='tshirtecommerce_design_order_id' value=$product.tshirtecommerce_design_order_id}
+				{assign var='tshirtecommerce_design_order_img' value=$product.tshirtecommerce_design_order_img|json_decode}
+				<!-- Customized products -->
+				{if isset($product.customizedDatas)}
+					<tr class="item">
+						<td>{if $product.product_reference}{$product.product_reference|escape:'html':'UTF-8'}{else}--{/if}</td>
+						<td>
+							{$product.product_name|escape:'html':'UTF-8'}
+							{if isset($product.print_type)}
+							<br />
+							{$product.print_type|escape:'html':'UTF-8'}
+							{/if}
+							<br />
+							<div class="zoom-gallery">
+							{foreach from=$tshirtecommerce_design_order_img key=title item=design_img}
+								<a href="{$site_url}{$design_img}" alt="{$title}" title="{$title}" product-name="{$product.product_name}" data-source="{$site_url}{$design_img}">
+									<img src="{$site_url}{$design_img}" alt="{$title}" title="{$title}" class="tshirtecommerce-img-thumb imgm img-thumbnail" width="100px" height="100px" />
+								</a>
+							{/foreach}
+							</div>
+							<br />
+							
+						</td>
+						<td>{$product.product_quantity}</td>
+						<td>
+							<label class="price" for="cb_{$product.id_order_detail|intval}">
+								{if $group_use_tax}
+									{convertPriceWithCurrency price=$product.unit_price_tax_incl currency=$currency}
+								{else}
+									{convertPriceWithCurrency price=$product.unit_price_tax_excl currency=$currency}
+								{/if}
+							</label>
+						</td>
+						<td>
+							{if isset($customizedDatas.$productId.$productAttributeId)}
+								{if $group_use_tax}
+									{convertPriceWithCurrency price=$product.total_customization_wt currency=$currency}
+								{else}
+									{convertPriceWithCurrency price=$product.total_customization currency=$currency}
+								{/if}
+							{else}
+								{if $group_use_tax}
+									{convertPriceWithCurrency price=$product.total_price_tax_incl currency=$currency}
+								{else}
+									{convertPriceWithCurrency price=$product.total_price_tax_excl currency=$currency}
+								{/if}
+							{/if}
+						</td>
+					</tr>
+				{/if}
+				<!-- Classic products -->
+				{if $product.product_quantity > $product.customizationQuantityTotal}
+					<tr class="item">
+						<td>{if $product.product_reference}{$product.product_reference|escape:'html':'UTF-8'}{else}--{/if}</td>
+						<td>
+							{$product.product_name|escape:'html':'UTF-8'}
+							{if isset($product.print_type)}
+							<br />
+							{$product.print_type|escape:'html':'UTF-8'}
+							{/if}
+							<br />
+							<div class="zoom-gallery">
+							{foreach from=$tshirtecommerce_design_order_img key=title item=design_img}
+								<a href="{$site_url}{$design_img}" alt="{$title}" title="{$title}" product-name="{$product.product_name}" data-source="{$site_url}{$design_img}">
+									<img src="{$site_url}{$design_img}" alt="{$title}" title="{$title}" class="tshirtecommerce-img-thumb imgm img-thumbnail" width="100px" height="100px" />
+								</a>
+							{/foreach}
+							</div>
+							<br />
+							
+						</td>
+						<td>{$product.product_quantity}</td>
+						<td>
+							{if $group_use_tax}
+								{convertPriceWithCurrency price=$product.unit_price_tax_incl currency=$currency}
+							{else}
+								{convertPriceWithCurrency price=$product.unit_price_tax_excl currency=$currency}
+							{/if}
+						</td>
+						<td>
+							{if $group_use_tax}
+								{convertPriceWithCurrency price=$product.total_price_tax_incl currency=$currency}
+							{else}
+								{convertPriceWithCurrency price=$product.total_price_tax_excl currency=$currency}
+							{/if}
+						</td>
+					</tr>
+				{/if}
+			{/if}
+			{/foreach}
+		</tbody>
+	</table>
+</div>

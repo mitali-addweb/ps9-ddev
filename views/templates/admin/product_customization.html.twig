@@ -1,0 +1,98 @@
+{% extends '@PrestaShop/Admin/Product/ProductPage/product.html.twig' %}
+
+{% block product_panel_tshirtecommerce %}
+    <div role="tabpanel" class="form-contenttab tab-pane" id="step6">
+        <div class="row">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-header-title">
+                            {{ 'T-Shirt eCommerce Designer'|trans({}, 'Modules.Tshirtecommerce.Admin') }}
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        {% if error_warning %}
+                            <div class="alert alert-warning" role="alert">
+                                {{ error_warning }}
+                            </div>
+                        {% endif %}
+
+                        <div class="form-group row">
+                            <label class="form-control-label col-lg-3">
+                                {{ 'Enable Designer'|trans({}, 'Modules.Tshirtecommerce.Admin') }}
+                            </label>
+                            <div class="col-lg-9">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" 
+                                           name="enable_designer" id="enable_designer"
+                                           {% if product.enable_designer %}checked{% endif %}>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group row">
+                            <label class="form-control-label col-lg-3">
+                                {{ 'Design Product ID'|trans({}, 'Modules.Tshirtecommerce.Admin') }}
+                            </label>
+                            <div class="col-lg-9">
+                                <input type="text" class="form-control" name="design_product_id"
+                                       value="{{ product.design_product_id }}" />
+                            </div>
+                        </div>
+
+                        <div class="form-group row">
+                            <label class="form-control-label col-lg-3">
+                                {{ 'Default Design'|trans({}, 'Modules.Tshirtecommerce.Admin') }}
+                            </label>
+                            <div class="col-lg-9">
+                                <select class="form-select" name="default_design">
+                                    <option value="">{{ 'None'|trans({}, 'Modules.Tshirtecommerce.Admin') }}</option>
+                                    {% for design in available_designs %}
+                                        <option value="{{ design.id }}"
+                                                {% if design.id == product.default_design %}selected{% endif %}>
+                                            {{ design.name }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+
+                        {% if demo_url %}
+                            <div class="row mt-3">
+                                <div class="col">
+                                    <div class="alert alert-info">
+                                        {{ 'You can preview the designer for this product'|trans({}, 'Modules.Tshirtecommerce.Admin') }}
+                                        <a href="{{ demo_url }}" target="_blank" class="btn btn-outline-primary btn-sm ms-2">
+                                            {{ 'Preview Designer'|trans({}, 'Modules.Tshirtecommerce.Admin') }}
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script type="text/javascript">
+        $(document).ready(function() {
+            // Handle enable/disable designer logic
+            $('#enable_designer').on('change', function() {
+                if ($(this).is(':checked')) {
+                    $('[name="design_product_id"]').prop('disabled', false);
+                    $('[name="default_design"]').prop('disabled', false);
+                } else {
+                    $('[name="design_product_id"]').prop('disabled', true);
+                    $('[name="default_design"]').prop('disabled', true);
+                }
+            });
+
+            // Initial state
+            $('#enable_designer').trigger('change');
+        });
+    </script>
+{% endblock %}

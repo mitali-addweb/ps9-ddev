@@ -1,0 +1,151 @@
+<?php
+/**
+ * FIXED VERSION - Designer Front Controller
+ * Copy this to: controllers/front/designer.php
+ */
+
+if (!defined('_PS_VERSION_')) {
+    exit;
+}
+
+class TshirtecommerceDesignerModuleFrontController extends ModuleFrontController
+{
+    protected $product;
+    public $display_column_left = false;
+    public $display_column_right = false;
+
+    public function __construct()
+    {
+        parent::__construct();
+        if (Configuration::get('PS_SSL_ENABLED')) {
+            $this->ssl = true;
+        }
+        $this->display_column_left = false;
+        $this->display_column_right = false;
+    }
+
+    public function initContent()
+    {
+        parent::initContent();
+
+        $url = Tools::usingSecureMode() ? Tools::getShopDomainSsl(true) : Tools::getShopDomain(true);
+        $url .= __PS_BASE_URI__;
+
+        $error = '';
+        $content = '';
+        $urlDesignload = '';
+        $product_id = 0;
+        $parent_id = 0;
+
+        // Step 1: Get parent product ID
+        if (!Tools::getIsset('parent_id')) {
+            // No parent_id in URL - check default product setting
+            $setting_str = Configuration::get('TSHIRTECOMMERCE_DOWNLOADABLE');
+            if ($setting_str) {
+                $parts = explode('::', $setting_str);
+                $parent_id = isset($parts[0]) ? (int)$parts[0] : 0;
+            }
+
+            // Still no parent_id? Find any product with design_product_id
+            if ($parent_id <= 0) {
+                $result = Db::getInstance()->getRow(
+                    'SELECT `id_product`, `design_product_id`
+                    FROM `'._DB_PREFIX_.'product`
+                    WHERE `design_product_id` IS NOT NULL
+                    AND `design_product_id` != ""
+                    AND `active` = 1
+                    LIMIT 1'
+                );
+                if ($result) {
+                    $parent_id = (int)$result['id_product'];
+                    $product_id = $result['design_product_id'];
+                }
+            }
+        } else {
+            $parent_id = (int)Tools::getValue('parent_id');
+        }
+
+        // Step 2: Get product_id (design ID) if not already set
+        if (Tools::getIsset('product_id')) {
+            $product_id = Tools::getValue('product_id');
+        } elseif ($parent_id > 0 && empty($product_id)) {
+            $product_id = Db::getInstance()->getValue(
+                'SELECT `design_product_id`
+                FROM `'._DB_PREFIX_.'product`
+                WHERE `id_product` = '.(int)$parent_id
+            );
+        }
+
+        // Step 3: Load the product object
+        if ($parent_id > 0) {
+            $this->product = new Product($parent_id, true, $this->context->language->id, $this->context->shop->id);
+
+            if (!Validate::isLoadedObject($this->product) || !$this->product->active) {
+                $error = $this->module->trans('Product not found or inactive.', [], 'Modules.Tshirtecommerce.Shop');
+                $this->product = null;
+                $parent_id = 0;
+            } else {
+                // Product loaded successfully
+                $content = '<div class="row-designer" id="tshirtecommerce-designer-container"></div>';
+
+                // Build designer URL
+                if ($product_id) {
+                    $urlDesignload = $url.'tshirtecommerce/index.php?product='.$product_id.'&parent='.$parent_id;
+                }
+            }
+        } else {
+            $error = $this->module->trans('No design products configured. Please add a product with design_product_id in the database or configure default product in module settings.', [], 'Modules.Tshirtecommerce.Shop');
+        }
+
+        // Get customer group
+        $id_group = $this->context->customer->id
+            ? Customer::getDefaultGroupId((int)$this->context->customer->id)
+            : (int)Group::getCurrent()->id;
+
+        // Assign ALL required variables
+        $this->context->smarty->assign(array(
+            // Product data
+            'product' => $this->product,
+            'product_obj' => $this->product,
+            'has_product' => ($this->product !== null && Validate::isLoadedObject($this->product)),
+
+            // Designer content
+            'error' => $error,
+            'tshirtecommerce_content' => $content,
+            'urlDesignload' => $urlDesignload,
+
+            // URLs
+            'url' => $url,
+            'url_mobile' => $url.'modules/tshirtecommerce/views/css/mobile.css',
+            'url_mobile_css' => $url.'modules/tshirtecommerce/views/css/mobile.css',
+            'url_prestashop_css' => $url.'modules/tshirtecommerce/views/css/prestashop.css',
+            'url_back' => $this->product ? $this->context->link->getProductLink($this->product) : $url,
+            'url_designer' => $this->context->link->getModuleLink('tshirtecommerce', 'designer'),
+            'url_api' => $url.'modules/tshirtecommerce/ajax.php',
+            'url_appjs' => $url.'modules/tshirtecommerce/views/js/app.js',
+
+            // PrestaShop IDs
+            'ps_product_id' => $parent_id,
+            'ps_language_id' => $this->context->language->id,
+            'ps_shop_id' => $this->context->shop->id,
+            'ps_id_customer' => $this->context->customer->id,
+            'ps_id_currency' => $this->context->currency->id,
+            'ps_id_country' => $this->context->country->id,
+            'ps_id_group' => $id_group,
+
+            // Links
+            'link_register_account' => $this->context->link->getPageLink('my-account', true),
+            'link_forgot_password' => $this->context->link->getPageLink('password', true),
+            'link_shopping_cart' => $this->context->link->getPageLink('order'),
+
+            // Settings
+            'logo_loading' => $url.'modules/tshirtecommerce/views/img/loading.gif',
+            'text_loading' => $this->module->trans('Loading...', [], 'Modules.Tshirtecommerce.Shop'),
+            'tshirtecommerce_cart_ajax' => Configuration::get('TSHIRTECOMMERCE_CART_AJAX') ?: 1,
+            'tshirtecommerce_cart_ajax_msg' => $this->module->trans('Product added to cart.', [], 'Modules.Tshirtecommerce.Shop'),
+            'tshirtecommerce_mobile_full' => Configuration::get('TSHIRTECOMMERCE_FULL_MOBILE_LAYOUT') ?: 0,
+        ));
+
+        $this->setTemplate('module:tshirtecommerce/views/templates/front/designer.tpl');
+    }
+}

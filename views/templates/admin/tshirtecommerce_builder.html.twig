@@ -1,0 +1,31 @@
+{% extends '@PrestaShop/Admin/layout.html.twig' %}
+
+{% block content %}
+    {% if errorWarning %}
+        <div class="alert alert-warning" role="alert">
+            {{ errorWarning|raw }}
+        </div>
+    {% endif %}
+
+    <div class="row">
+        <div class="col">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-header-title">
+                        {{ 'T-Shirt eCommerce Builder'|trans({}, 'Modules.Tshirtecommerce.Admin') }}
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <iframe src="{{ url }}" width="100%" height="800px" frameborder="0"></iframe>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script type="text/javascript">
+        // Any additional JavaScript can be added here
+    </script>
+{% endblock %}

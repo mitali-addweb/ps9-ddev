@@ -1,0 +1,113 @@
+{*
+* @module Prestashop Custom Product Designer
+*
+* @author 		tshirtecommerce - https://tshirtecommerce.com/
+* @date 		January 10, 2017
+* 
+* API 			1.0.2
+* 
+* @copyright  	Copyright (C) 2016 tshirtecommerce.com. All rights reserved.
+* @license    	GNU General Public License version 2 or later; see LICENSE
+*
+* @since 		1.5
+*
+*}
+
+<!-- Tshirteocmmerce -->
+{function jsadd keypart=''}
+    {foreach $data as $key => $item}
+        {if not $item|@is_array}
+            {if $keypart eq ''}
+                design_images['{$key}'] = '{$item}'
+             {else}
+                design_images{$keypart}['{$key}'] = '{$item}'
+            {/if}
+        {else}
+            design_images{$keypart}['{$key}'] = [];
+            {jsadd data = $item keypart = "`$keypart`['`$key`']" }
+        {/if}
+    {/foreach}
+{/function}
+<script type="text/javascript">
+	jQuery(document).ready( function() {
+		var design_images=[];
+		{jsadd data=$design_images}
+		var url_path_img="{$url_path_img}";
+
+		// Append image design to shopping cart
+		jQuery('#cart_summary tr').each( function() {
+			jQuery(this).find(".zoom-gallery").remove();
+			jQuery(this).find(".link-edit-design").remove();
+			jQuery(this).find(".printing-type").remove();
+
+			var row_index = jQuery(this).index('tbody tr');
+			if (row_index != -1) {
+				var id_tr = jQuery(this).attr('id');
+				if (id_tr.indexOf(design_images[row_index]["tshirtecommerce_design_cart_id"]) == -1) {
+					id_tr += '_' + design_images[row_index]["tshirtecommerce_design_cart_id"];
+				}
+				jQuery(this).attr('id', id_tr);
+
+				var html = '<p class="printing-type">'+design_images[row_index-1]["printing_type"]+'</p><div class="zoom-gallery">';
+				for (var d in design_images[row_index-1]['design']) {
+					var title = d;
+					html += "<a class='link-edit-design' href='" + url_path_img + design_images[row_index-1]['design'][d] + "' data-source='" + url_path_img + design_images[row_index-1]['design'][d] + "' title='" + title + "' product-name='" + jQuery(this).find('.product-name a').text() + "'>";
+					html += "<img alt='" + title + "' src='" + url_path_img+design_images[row_index-1]['design'][d] + "' title='" + title + "' class='tshirtecommerce-img-thumb' width='58px' height='58px' />";
+					html += "</a>"; 
+				}
+				html += '</div>';
+				if (design_images[row_index-1]["link"] != "") {
+					html += '<a class="link-edit-design" href="'+design_images[row_index-1]["link"]+'">{l s="View Design" mod="tshirtecommerce"}</a>';
+				}
+				jQuery(this).find('.cart_description').append(html);
+
+				var href_cart_quantity_down = jQuery(this).find('.cart_quantity_down').attr('href');
+				if (href_cart_quantity_down.indexOf('row_design') == -1) {
+					href_cart_quantity_down += '&row_design=' + design_images[row_index]["tshirtecommerce_design_cart_id"];
+				}
+				jQuery(this).find('.cart_quantity_down').attr('href', href_cart_quantity_down);
+				var cart_quantity_up = jQuery(this).find('.cart_quantity_up').attr('href');
+				if (cart_quantity_up.indexOf('row_design') == -1) {
+					cart_quantity_up += '&row_design=' + design_images[row_index]["tshirtecommerce_design_cart_id"];
+				}
+				jQuery(this).find('.cart_quantity_up').attr('href', cart_quantity_up);
+				var href_cart_quantity_delete = jQuery(this).find('.cart_quantity_delete').attr('href');
+				if (href_cart_quantity_delete.indexOf('row_design') == -1) {
+					href_cart_quantity_delete += '&row_design=' + design_images[row_index]["tshirtecommerce_design_cart_id"];
+				}
+				jQuery(this).find('.cart_quantity_delete').attr('href', href_cart_quantity_delete);
+
+				var id_cart_quantity_down = jQuery(this).find('.cart_quantity_down').attr('id');
+				if (id_cart_quantity_down.indexOf(design_images[row_index]["tshirtecommerce_design_cart_id"]) == -1) {
+					id_cart_quantity_down += '_' + design_images[row_index]["tshirtecommerce_design_cart_id"];
+				}
+				jQuery(this).find('.cart_quantity_down').attr('id', id_cart_quantity_down);
+				var id_cart_quantity_up = jQuery(this).find('.cart_quantity_up').attr('id');
+				if (id_cart_quantity_up.indexOf(design_images[row_index]["tshirtecommerce_design_cart_id"]) == -1) {
+					id_cart_quantity_up += '_' + design_images[row_index]["tshirtecommerce_design_cart_id"];
+				}
+				jQuery(this).find('.cart_quantity_up').attr('id', id_cart_quantity_up);
+				var id_cart_quantity_delete = jQuery(this).find('.cart_quantity_delete').attr('id');
+				if (id_cart_quantity_delete.indexOf(design_images[row_index]["tshirtecommerce_design_cart_id"]) == -1) {
+					id_cart_quantity_delete += '_' + design_images[row_index]["tshirtecommerce_design_cart_id"];
+				}
+				jQuery(this).find('.cart_quantity_delete').attr('id', id_cart_quantity_delete);
+
+				var name_cart_quantity_input_hidden = jQuery(this).find('.cart_quantity input[type="hidden"]').attr('name');
+				if (name_cart_quantity_input_hidden.indexOf(design_images[row_index]["tshirtecommerce_design_cart_id"]) == -1) {
+					var temp = name_cart_quantity_input_hidden.replace('hidden', '');
+					name_cart_quantity_input_hidden = temp + design_images[row_index]["tshirtecommerce_design_cart_id"] + '_hidden';
+				}
+				jQuery(this).find('.cart_quantity input[type="hidden"]').attr('name', name_cart_quantity_input_hidden);
+
+				var name_cart_quantity_input = jQuery(this).find('.cart_quantity_input').attr('name');
+				if (name_cart_quantity_input.indexOf(design_images[row_index]["tshirtecommerce_design_cart_id"]) == -1) {
+					name_cart_quantity_input += '_' + design_images[row_index]["tshirtecommerce_design_cart_id"];
+				}
+				jQuery(this).find('.cart_quantity_input').attr('name', name_cart_quantity_input);
+			}
+		});
+	});
+
+</script>
+<!-- /Tshirtecommerce -->

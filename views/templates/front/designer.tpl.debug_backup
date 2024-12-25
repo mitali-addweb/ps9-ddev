@@ -1,0 +1,141 @@
+{* DEBUG Template - shows all variables *}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Designer Debug Mode</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+        .debug-box { background: white; border: 3px solid #333; padding: 20px; margin: 20px 0; border-radius: 5px; }
+        .debug-box h2 { margin-top: 0; color: #c00; }
+        .debug-box pre { background: #f0f0f0; padding: 15px; overflow: auto; font-size: 12px; line-height: 1.5; }
+        .success { color: green; font-weight: bold; }
+        .error { color: red; font-weight: bold; }
+        .warning { color: orange; font-weight: bold; }
+        .step { padding: 5px 0; border-bottom: 1px dotted #ccc; }
+        table { width: 100%; border-collapse: collapse; }
+        table td { padding: 8px; border: 1px solid #ddd; }
+        table td:first-child { background: #f0f0f0; font-weight: bold; width: 200px; }
+    </style>
+</head>
+<body>
+
+<div class="debug-box">
+    <h2>🔍 T-Shirt eCommerce Designer - DEBUG MODE</h2>
+    <p><strong>URL:</strong> {$smarty.server.REQUEST_URI}</p>
+</div>
+
+{if isset($debug_info) && $debug_info}
+<div class="debug-box">
+    <h2>Step-by-Step Debug Log:</h2>
+    <pre>{foreach $debug_info as $step}
+<div class="step">{$step}</div>{/foreach}</pre>
+</div>
+{/if}
+
+<div class="debug-box">
+    <h2>Current Status:</h2>
+    <table>
+        <tr>
+            <td>has_product</td>
+            <td class="{if $has_product}success{else}error{/if}">
+                {if $has_product}✓ TRUE{else}✗ FALSE{/if}
+            </td>
+        </tr>
+        <tr>
+            <td>parent_id</td>
+            <td>{$parent_id|default:'0'}</td>
+        </tr>
+        <tr>
+            <td>product_id_value</td>
+            <td>{$product_id_value|default:'(empty)'}</td>
+        </tr>
+        <tr>
+            <td>error</td>
+            <td class="{if $error}error{/if}">{$error|default:'(none)'}</td>
+        </tr>
+        <tr>
+            <td>urlDesignload</td>
+            <td>{$urlDesignload|default:'(not set)'}</td>
+        </tr>
+    </table>
+</div>
+
+{if isset($product) && $product}
+<div class="debug-box" style="border-color: green;">
+    <h2 class="success">✓ Product Loaded Successfully!</h2>
+    <table>
+        <tr>
+            <td>Product ID</td>
+            <td>{if is_object($product)}{$product->id}{else}{$product.id}{/if}</td>
+        </tr>
+        <tr>
+            <td>Product Name</td>
+            <td>{if is_object($product)}{$product->name}{else}{$product.name|default:'N/A'}{/if}</td>
+        </tr>
+        <tr>
+            <td>Active</td>
+            <td>{if is_object($product)}{$product->active}{else}{$product.active|default:'N/A'}{/if}</td>
+        </tr>
+    </table>
+</div>
+{else}
+<div class="debug-box" style="border-color: red;">
+    <h2 class="error">✗ No Product Loaded</h2>
+    <p>The $product variable is empty or null.</p>
+</div>
+{/if}
+
+{if $has_product}
+<div class="debug-box" style="border-color: green;">
+    <h2 class="success">Designer Should Load:</h2>
+    {$tshirtecommerce_content nofilter}
+
+    {if $urlDesignload}
+    <p style="margin-top:20px;">
+        <strong>Designer URL:</strong><br>
+        <a href="{$urlDesignload}" target="_blank" style="word-break:break-all;">{$urlDesignload}</a>
+    </p>
+    <iframe src="{$urlDesignload}" style="width:100%;height:600px;border:2px solid #333;margin-top:20px;"></iframe>
+    {/if}
+</div>
+{else}
+<div class="debug-box" style="border-color: orange;">
+    <h2 class="warning">⚠ Designer Cannot Load</h2>
+    <p><strong>Reason:</strong> has_product is FALSE</p>
+
+    <h3>Troubleshooting Steps:</h3>
+    <ol>
+        <li>Check the debug log above to see where it failed</li>
+        <li>Verify product exists in database:
+            <pre>SELECT id_product, active, design_product_id FROM ps_product WHERE id_product = 1;</pre>
+        </li>
+        <li>Check configuration:
+            <pre>SELECT value FROM ps_configuration WHERE name = 'TSHIRTECOMMERCE_DOWNLOADABLE';</pre>
+        </li>
+        <li>Make sure product is ACTIVE (active = 1)</li>
+        <li>Make sure design_product_id is NOT empty</li>
+    </ol>
+</div>
+{/if}
+
+<div class="debug-box">
+    <h2>Database Queries to Run:</h2>
+    <h3>1. Check products with design_product_id:</h3>
+    <pre>SELECT id_product, active, design_product_id
+FROM ps_product
+WHERE design_product_id IS NOT NULL AND design_product_id != '';</pre>
+
+    <h3>2. Set product 1 as designer product:</h3>
+    <pre>UPDATE ps_product
+SET design_product_id = 'test_design_123', active = 1
+WHERE id_product = 1;</pre>
+
+    <h3>3. Set default product in configuration:</h3>
+    <pre>INSERT INTO ps_configuration (name, value, date_add, date_upd)
+VALUES ('TSHIRTECOMMERCE_DOWNLOADABLE', '1::1', NOW(), NOW())
+ON DUPLICATE KEY UPDATE value = '1::1';</pre>
+</div>
+
+</body>
+</html>

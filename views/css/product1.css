@@ -1,0 +1,54 @@
+.tshirtecommerce-color { 
+	margin-right: .625rem;
+	-moz-box-shadow: 0 1px 1px rgba(0, 0, 0, 0.3);
+    -webkit-box-shadow: 0 1px 1px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.3);
+}
+.tshirtecommerce-radio {
+	opacity: 0;
+	height: 1.40rem;
+	width: 1.40rem;
+	cursor: pointer;
+}
+.tshirtecommerce-attributes > div {
+	margin: 1.25rem 0;
+}
+.tshirtecommerce-color-label {
+	width: 100%;
+	display: inline-flex;
+	text-align: left;
+	margin-bottom: .375rem;
+}
+.tshirtecommerce-color.tactive {
+	-webkit-border-radius: 50%;
+    -moz-border-radius: 50%;
+	border-radius: 50%;
+}
+.tshirtecommerce-sizes {
+	display: inline-block;
+	float: left;
+	margin-right: .625rem;
+	margin-bottom: .625rem;
+	width: auto;
+	position: relative;
+}
+.tshirtecommerce-sizes span {
+	width: 100%;
+	text-align: center;
+	/*position: absolute;*/
+}
+.tshirtecommerce-sizes input {
+	width: 3rem;
+	text-align: center;
+}
+.tshirtecommerce-attribute-group select, .tshirtecommerce-attribute-group input { padding: .175rem .5rem; }
+.tshirtecommerce-attr-price { font-size: small; }
+.tshirtecommerce-attributes {
+	padding: 19px 19px 17px;
+}
+.tshirtecommerce-color {
+	padding: 0.5rem 1.25rem;
+}
+.tshirtecommerce-color span, .tshirtecommerce-color span.checked {
+	background-image: none;
+}

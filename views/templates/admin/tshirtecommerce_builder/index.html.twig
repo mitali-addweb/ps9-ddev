@@ -1,0 +1,15 @@
+{% extends '@PrestaShop/Admin/layout.html.twig' %}
+
+{% block content %}
+    {% if errorWarning %}
+        <div class="alert alert-warning">
+            {{ errorWarning|raw }}
+        </div>
+    {% endif %}
+
+    <iframe src="{{ url|raw }}" 
+            style="width: 100%; min-height: 1200px; border: none;" 
+            id="tshirtecommerce-frame" 
+            name="tshirtecommerce-frame">
+    </iframe>
+{% endblock %}

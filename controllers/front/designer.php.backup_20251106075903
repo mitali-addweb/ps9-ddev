@@ -1,0 +1,183 @@
+<?php
+/**
+ * DEBUG VERSION - Shows all variables
+ * Copy to: controllers/front/designer.php
+ */
+
+if (!defined('_PS_VERSION_')) {
+    exit;
+}
+
+class TshirtecommerceDesignerModuleFrontController extends ModuleFrontController
+{
+    public $display_column_left = false;
+    public $display_column_right = false;
+
+    public function init()
+    {
+        parent::init();
+        $this->display_column_left = false;
+        $this->display_column_right = false;
+    }
+
+    public function initContent()
+    {
+        parent::initContent();
+
+        // DEBUG ARRAY
+        $debug = [];
+
+        // Get base URL
+        $url = Tools::usingSecureMode() ? Tools::getShopDomainSsl(true) : Tools::getShopDomain(true);
+        $url .= __PS_BASE_URI__;
+        $debug[] = "Base URL: " . $url;
+
+        $parent_id = 0;
+        $product_id = '';
+        $error = '';
+        $has_product = false;
+
+        // Try to get parent_id from URL
+        if (Tools::getIsset('parent_id')) {
+            $parent_id = (int)Tools::getValue('parent_id');
+            $debug[] = "Got parent_id from URL: " . $parent_id;
+        }
+
+        // If no parent_id, try to get default product
+        if ($parent_id <= 0) {
+            $setting = Configuration::get('TSHIRTECOMMERCE_DOWNLOADABLE');
+            $debug[] = "TSHIRTECOMMERCE_DOWNLOADABLE setting: " . var_export($setting, true);
+
+            if ($setting) {
+                $parts = explode('::', $setting);
+                $debug[] = "Setting parts: " . json_encode($parts);
+                $parent_id = isset($parts[0]) ? (int)$parts[0] : 0;
+                $debug[] = "Extracted parent_id: " . $parent_id;
+            } else {
+                $debug[] = "No TSHIRTECOMMERCE_DOWNLOADABLE setting found";
+            }
+        }
+
+        // Still no parent_id? Find ANY product with design_product_id
+        if ($parent_id <= 0) {
+            $debug[] = "Searching for any product with design_product_id...";
+
+            $result = Db::getInstance()->getRow(
+                'SELECT `id_product`, `design_product_id`, `active`
+                FROM `'._DB_PREFIX_.'product`
+                WHERE `design_product_id` IS NOT NULL
+                AND `design_product_id` != ""
+                LIMIT 5'
+            );
+
+            $debug[] = "Database query result: " . json_encode($result);
+
+            if ($result && isset($result['id_product'])) {
+                // Check if active
+                if ($result['active'] == 1) {
+                    $parent_id = (int)$result['id_product'];
+                    $product_id = $result['design_product_id'];
+                    $debug[] = "Found active product: parent_id=" . $parent_id . ", design_product_id=" . $product_id;
+                } else {
+                    $debug[] = "Found product but it's INACTIVE: " . json_encode($result);
+                }
+            } else {
+                $debug[] = "NO products found with design_product_id in database!";
+            }
+        }
+
+        $debug[] = "Final parent_id before loading product: " . $parent_id;
+
+        // Load product if we have an ID
+        $product = null;
+        if ($parent_id > 0) {
+            $debug[] = "Attempting to load Product ID: " . $parent_id;
+
+            $product = new Product($parent_id, true, $this->context->language->id);
+
+            $debug[] = "Product object created. Product->id = " . (isset($product->id) ? $product->id : 'NULL');
+            $debug[] = "Product->active = " . (isset($product->active) ? $product->active : 'NULL');
+
+            if (Validate::isLoadedObject($product)) {
+                $debug[] = "✓ Product is loaded (Validate::isLoadedObject = true)";
+
+                if ($product->active) {
+                    $debug[] = "✓ Product is ACTIVE";
+                    $has_product = true;
+
+                    // Get design_product_id if not already set
+                    if (empty($product_id)) {
+                        $product_id = Db::getInstance()->getValue(
+                            'SELECT `design_product_id`
+                            FROM `'._DB_PREFIX_.'product`
+                            WHERE `id_product` = '.(int)$parent_id
+                        );
+                        $debug[] = "Retrieved design_product_id from DB: " . $product_id;
+                    }
+                } else {
+                    $debug[] = "✗ Product is INACTIVE (active=0)";
+                    $error = 'Product ID '.$parent_id.' is inactive';
+                }
+            } else {
+                $debug[] = "✗ Product failed validation (Validate::isLoadedObject = false)";
+                $error = 'Product ID '.$parent_id.' not found';
+            }
+        } else {
+            $debug[] = "✗ parent_id is 0 - cannot load product";
+            $error = 'No design products configured in database';
+        }
+
+        $debug[] = "has_product = " . ($has_product ? 'TRUE' : 'FALSE');
+        $debug[] = "error = " . $error;
+
+        // Build designer URL
+        $urlDesignload = '';
+        if ($has_product && $product_id) {
+            $urlDesignload = $url.'tshirtecommerce/index.php?product='.$product_id.'&parent='.$parent_id;
+            $debug[] = "Designer URL: " . $urlDesignload;
+        } else {
+            $debug[] = "Cannot build designer URL - has_product=" . ($has_product ? 'true' : 'false') . ", product_id=" . $product_id;
+        }
+
+        // Assign to template
+        $this->context->smarty->assign(array(
+            'debug_mode' => true,
+            'debug_info' => $debug,
+            'has_product' => $has_product,
+            'product' => $product,
+            'error' => $error,
+            'parent_id' => $parent_id,
+            'product_id_value' => $product_id,
+            'urlDesignload' => $urlDesignload,
+            'tshirtecommerce_content' => '<div id="tshirtecommerce-designer-container" style="min-height:600px;background:#f0f0f0;"></div>',
+
+            // URLs
+            'url' => $url,
+            'url_back' => $has_product ? $this->context->link->getProductLink($product) : $url,
+            'url_designer' => $this->context->link->getModuleLink('tshirtecommerce', 'designer'),
+            'url_api' => $url.'modules/tshirtecommerce/ajax.php',
+
+            // CSS/JS
+            'url_mobile' => $url.'modules/tshirtecommerce/views/css/mobile.css',
+            'url_prestashop_css' => $url.'modules/tshirtecommerce/views/css/prestashop.css',
+
+            // PS IDs
+            'ps_product_id' => $parent_id,
+            'ps_language_id' => $this->context->language->id,
+            'ps_shop_id' => $this->context->shop->id,
+            'ps_id_customer' => $this->context->customer->id,
+            'ps_id_currency' => $this->context->currency->id,
+            'ps_id_country' => $this->context->country->id,
+
+            // Links
+            'link_register_account' => $this->context->link->getPageLink('my-account', true),
+            'link_shopping_cart' => $this->context->link->getPageLink('order'),
+
+            // Settings
+            'logo_loading' => $url.'modules/tshirtecommerce/views/img/loading.gif',
+            'text_loading' => 'Loading...',
+        ));
+
+        $this->setTemplate('module:tshirtecommerce/views/templates/front/designer.tpl');
+    }
+}

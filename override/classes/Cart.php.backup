@@ -1,0 +1,96 @@
+<?php
+/**
+ * Cart override for Tshirtecommerce module
+ * PrestaShop 9 Compatible
+ */
+
+class Cart extends CartCore
+{
+	/**
+	 * Get order total with Tshirtecommerce design prices
+	 * PrestaShop 9 compatible signature
+	 */
+	public function getOrderTotal($withTaxes = true, $type = Cart::BOTH, $products = null, $id_carrier = null, $use_cache = false, bool $keepOrderPrices = false)
+    {
+    	// Prestashop Custom Product Designer
+    	$order_total = parent::getOrderTotal($withTaxes, $type, $products, $id_carrier, $use_cache, $keepOrderPrices);
+    	
+	    if (!defined('_PS_PRICE_DISPLAY_PRECISION_')) {
+	        define('_PS_PRICE_DISPLAY_PRECISION_', 2);
+	    }
+	    if (!defined('_PS_PRICE_COMPUTE_PRECISION_')) {
+	        define('_PS_PRICE_COMPUTE_PRECISION_', _PS_PRICE_DISPLAY_PRECISION_);
+	    }
+	    if (!isset($compute_precision)) {
+	    	$compute_precision = _PS_PRICE_COMPUTE_PRECISION_;
+	    }
+
+	    if (is_null($products)) {
+            $products = $this->getProducts();
+        }
+	    
+	    if (Module::isInstalled('tshirtecommerce') && Module::isEnabled('tshirtecommerce')) {
+		    if ($type != Cart::ONLY_WRAPPING && $type != Cart::ONLY_DISCOUNTS && $type != Cart::ONLY_SHIPPING) {
+				$id_cart = $this->id;
+				$currency = new Currency($this->id_currency);
+				$currency->prefix = trim($currency->prefix);
+	        	$currency->suffix = trim($currency->suffix);
+				$char_currency = (!empty($currency->prefix)) ? $currency->prefix : $currency->suffix;
+
+				$currencys = Currency::getCurrencies();
+				$char_currencys = array();
+				$cconversion_rate = 1;
+				foreach ($currencys as $crow) {
+					if (!empty($crow['sign'])) {
+						$char_currencys[] = $crow['sign'];
+
+						if ($char_currency == $crow['sign']) {
+							$cconversion_rate = $crow['conversion_rate'];
+						}
+					}
+				}
+
+				if ($id_cart > 0) {
+					$tprices = Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS('
+						SELECT cd.`value`, c.`quantity`
+						FROM `'._DB_PREFIX_.'customized_data` cd
+						INNER JOIN `'._DB_PREFIX_.'customization` c ON cd.id_customization = c.id_customization
+						INNER JOIN `'._DB_PREFIX_.'customization_field` cf ON cf.id_customization_field = cd.index 
+						WHERE c.id_cart = '.(int)$id_cart.' AND c.in_cart = 1 AND cf.tshirtecommerce = 7
+					');
+					if ($tprices != false && count($tprices) > 0) {
+						foreach ($tprices as $value) {
+							if (strpos($value['value'], 'tshirtecommercedesignunitprice') === false) {
+								continue;
+							}
+
+							if (count($currencys) <= 1) {
+								$price_of_design = trim(str_replace($char_currency, '', pSql($value['value'])));
+							} else {
+								$price_of_design = trim(str_replace($char_currency, '', pSql($value['value'])));
+								$old_currency = str_replace($price_of_design, '', pSql($value['value']));
+								$ccurrent_rate = 1;
+								foreach ($currencys as $crow) {
+									if ($old_currency == $crow['sign']) {
+										$ccurrent_rate = $crow['conversion_rate'];
+										break;
+									}
+								}
+								if (trim($char_currency) != trim($old_currency)) {
+									$price_of_design = $price_of_design * $cconversion_rate / $ccurrent_rate;
+								}
+							}
+
+							// TODO - add tax for $price_of_design here
+
+							$order_total += (float)$price_of_design * (int)$value['quantity'];
+						}
+					}
+				}
+			}
+		}
+		// \Prestashop Custom Product Designer
+
+    	return Tools::ps_round((float)$order_total, $compute_precision);
+    }
+}

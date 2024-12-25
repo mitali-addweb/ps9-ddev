@@ -1,0 +1,71 @@
+{% extends '@PrestaShop/front/layout.html.twig' %}
+
+{% block content %}
+    {% if product is not null %}
+        {% block breadcrumb %}
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a href="{{ product.url }}">{{ product.name }}</a>
+                    </li>
+                    <li class="breadcrumb-item active" aria-current="page">
+                        {{ 'Custom Your Own'|trans({}, 'Modules.Tshirtecommerce.Front') }}
+                    </li>
+                </ol>
+            </nav>
+        {% endblock %}
+
+        <div class="bootstrap">
+            {% if error is defined and error is not empty %}
+                <div class="alert alert-warning" role="alert">
+                    {{ error }}
+                </div>
+            {% else %}
+                <div class="container">
+                    {{ tshirtecommerce_content|raw }}
+                </div>
+            {% endif %}
+            
+            <div id="tshirtecommerce-dg-mask" class="tshirtecommerce-loading" style="display: none;"></div>
+        </div>
+
+        {% block stylesheets %}
+            {{ parent() }}
+            <link rel="stylesheet" href="{{ url_mobile }}" />
+            <link rel="stylesheet" href="{{ url_mobile_css }}" />
+            <link rel="stylesheet" href="{{ url_prestashop_css }}" />
+        {% endblock %}
+
+        {% block javascript_bottom %}
+            {{ parent() }}
+            <script>
+                window.tshirtecommerceConfig = {
+                    cartAjax: '{{ tshirtecommerce_cart_ajax }}',
+                    cartAjaxMsg: '{{ tshirtecommerce_cart_ajax_msg }}',
+                    mobileFullscreen: '{{ tshirtecommerce_mobile_full }}',
+                    urlBack: '{{ url_back }}',
+                    urlDesign: '{{ url_designer }}',
+                    urlDesignLoad: '{{ urlDesignload }}',
+                    urlApi: '{{ url_api }}',
+                    logoLoading: '{{ logo_loading }}',
+                    textLoading: `{{ text_loading }}`,
+                    urlRegisterPs: '{{ url_regiter_ps }}',
+                    
+                    // PrestaShop specific data
+                    psData: {
+                        productId: {{ ps_product_id }},
+                        languageId: {{ ps_language_id }},
+                        shopId: {{ ps_shop_id }},
+                        customerId: {{ ps_id_customer }},
+                        currencyId: {{ ps_id_currency }},
+                        countryId: {{ ps_id_country }},
+                        groupId: {{ ps_id_group }},
+                        combinations: {{ combinations|json_encode|raw }},
+                        colors: {{ colors|json_encode|raw }}
+                    }
+                };
+            </script>
+            <script src="{{ url_appjs }}"></script>
+        {% endblock %}
+    {% endif %}
+{% endblock %}

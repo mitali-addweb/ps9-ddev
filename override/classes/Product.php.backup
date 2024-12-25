@@ -1,0 +1,182 @@
+<?php
+
+class Product extends ProductCore
+{
+	public function getCustomizationFieldIds()
+    {
+    	if (!Customization::isFeatureActive()) {
+            return array();
+        }
+
+    	if (Module::isInstalled('tshirtecommerce') && Module::isEnabled('tshirtecommerce')) {
+    		return Db::getInstance()->executeS('
+				SELECT `id_customization_field`, `type`, `required`
+				FROM `'._DB_PREFIX_.'customization_field`
+				WHERE `tshirtecommerce` = 0 AND `id_product` = '.(int)$this->id);
+    	}
+
+    	return parent::getCustomizationFieldIds();
+    }
+
+    public function getCustomizationFields($id_lang = false, $id_shop = null)
+    {
+    	if (!Customization::isFeatureActive()) {
+            return false;
+        }
+
+        if (Shop::isFeatureActive() && !$id_shop) {
+            $id_shop = (int)Context::getContext()->shop->id;
+        }
+
+        $customization_fields = parent::getCustomizationFields($id_lang, $id_shop);
+
+        if (Module::isInstalled('tshirtecommerce') && Module::isEnabled('tshirtecommerce')) {
+        	if (!$result = Db::getInstance()->executeS('
+				SELECT cf.`id_customization_field`, cf.`type`, cf.`required`, cfl.`name`, cfl.`id_lang`
+				FROM `'._DB_PREFIX_.'customization_field` cf
+				NATURAL JOIN `'._DB_PREFIX_.'customization_field_lang` cfl
+				WHERE cf.`id_product` = '.(int)$this->id.($id_lang ? ' AND cfl.`id_lang` = '.(int)$id_lang : '').
+	                ($id_shop ? ' AND cfl.`id_shop` = '.$id_shop : '').' AND cf.`tshirtecommerce` NOT IN (1,2,3,4,5,6,7)
+				ORDER BY cf.`id_customization_field`')) {
+	            return false;
+	        }
+
+	        if ($id_lang) {
+	            return $result;
+	        }
+
+	        $customization_fields = array();
+	        foreach ($result as $row) {
+	            $customization_fields[(int)$row['type']][(int)$row['id_customization_field']][(int)$row['id_lang']] = $row;
+	        }
+
+	        return $customization_fields;
+        }
+
+        return $customization_fields;
+    }
+
+    public static function getPriceStatic(
+        $id_product,
+        $usetax = true,
+        $id_product_attribute = null,
+        $decimals = 6,
+        $divisor = null,
+        $only_reduc = false,
+        $usereduc = true,
+        $quantity = 1,
+        $force_associated_tax = false,
+        $id_customer = null,
+        $id_cart = null,
+        $id_address = null,
+        &$specific_price_output = null,
+        $with_ecotax = true,
+        $use_group_reduction = true,
+        Context $context = null,
+        $use_customer_price = true,
+        $id_customization = null
+    ) {
+        $return = parent::getPriceStatic(
+            $id_product,
+            $usetax,
+            $id_product_attribute,
+            $decimals,
+            $divisor,
+            $only_reduc,
+            $usereduc,
+            $quantity,
+            $force_associated_tax,
+            $id_customer,
+            $id_cart,
+            $id_address,
+            $specific_price_output,
+            $with_ecotax,
+            $use_group_reduction,
+            $context,
+            $use_customer_price,
+            $id_customization
+        );
+
+        $valid_designer = false;
+        if (Tools::getIsset('controller') && Tools::getValue('controller') == 'designer') {
+            $valid_designer = true;
+        }
+        if (Module::isInstalled('tshirtecommerce') && Module::isEnabled('tshirtecommerce') && !$valid_designer === false) {
+            $design_product_id = Db::getInstance()->getValue('SELECT `design_product_id` FROM `'._DB_PREFIX_.'product` WHERE `id_product`='.(int)$id_product);
+            if ($design_product_id == false) {
+                $design_product_id = '';
+            }
+
+            if (!empty($design_product_id)) {
+                $check = explode(':', $design_product_id);
+                if (count($check) > 1) {
+                    $param = self::getTshirtecommerceTemplateInfo($design_product_id, $quantity);
+                    $price_design = self::getTshirtecommercePriceDesign($param);
+
+                    $return += $price_design;
+                }
+            }
+
+        }
+
+        return $return;
+    }
+
+    public static function getTshirtecommerceTemplateInfo($design_product_id, $quantity = 1)
+    {
+        $return = array();
+        $param = explode(':', $design_product_id);
+
+        if (empty($design_product_id) || count($param) < 4) {
+            return $return;
+        }
+
+        $user_id = $param[0];
+        $design_id = $param[1];
+        $product_id = $param[2];
+        $color = $param[3];
+
+        if (!defined('DS')) define('DS', DIRECTORY_SEPARATOR);
+        if (!defined('ROOT')) define('ROOT', _PS_ROOT_DIR_.DS.'tshirtecommerce'.DS);
+        include_once _PS_ROOT_DIR_.DS.'tshirtecommerce'.DS.'includes'.DS.'functions.php';
+        $dg = new dg();
+
+        $cache = $dg->cache('admin');
+        $designs = $cache->get($user_id);
+        $design = $designs[$design_id];
+
+        $return['print_type'] = isset($design['print_type']) ? $design['print_type'] : 'SCREEN';
+        $return['colors'] = isset($design['colors']) ? $design['colors'] : array();
+        $return['print'] = isset($design['print']) ? $design['print'] : array();
+        $return['teams'] = isset($design['teams']) ? $design['teams'] : array();
+        $return['attribute'] = isset($design['attribute']) ? $design['attribute'] : array();
+        $return['product_options'] = isset($design['product_options']) ? $design['product_options'] : array();
+        $return['cliparts'] = isset($design['cliparts']) ? $design['cliparts'] : array();
+        $return['artStore'] = isset($design['artStore']) ? $design['artStore'] : array();
+        $return['product_id'] = $product_id;
+        $return['quantity'] = $quantity;
+        $return['ps_taxes'] = 0;
+
+        return $return;
+    }
+
+    public static function getTshirtecommercePriceDesign($param)
+    {
+        if (count($param) < 1) return 0;
+
+        if (!defined('DS')) define('DS', DIRECTORY_SEPARATOR);
+        if (!defined('ROOT')) define('ROOT', _PS_ROOT_DIR_.DS.'tshirtecommerce'.DS);
+        include_once _PS_ROOT_DIR_.DS.'tshirtecommerce'.DS.'includes'.DS.'functions.php';
+        $dg = new dg();
+
+        $prices = @$dg->prices($param, false, true);
+
+        $price_printing = isset($prices->printing) ? $prices->printing : 0;
+        $price_colors = isset($prices->colors) ? $prices->colors : 0;
+        $price_clipart = isset($prices->clipart) ? $prices->clipart : 0;
+        $price_attribute = isset($prices->attribute) ? $prices->attribute : 0;
+
+        $price = (float)$price_printing + (float)$price_colors + (float)$price_clipart + (float)$price_attribute;
+        return (float)$price;
+    }
+}
